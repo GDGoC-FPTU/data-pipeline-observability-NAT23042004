@@ -20,14 +20,14 @@ Cham diem tu dong:
 ==============================================================
 """
 
-import json
-import pandas as pd
-import os
 import datetime
+import json
+
+import pandas as pd
 
 # --- CONFIGURATION ---
-SOURCE_FILE = 'raw_data.json'
-OUTPUT_FILE = 'processed_data.csv'
+SOURCE_FILE = "raw_data.json"
+OUTPUT_FILE = "processed_data.csv"
 
 
 def extract(file_path):
@@ -47,7 +47,14 @@ def extract(file_path):
     #   with open(file_path, 'r') as f:
     #       data = json.load(f)
     #   return data
-    pass
+    try:
+        with open(file_path, "r") as f:
+            data = json.load(f)
+
+        return data
+
+    except FileNotFoundError:
+        print("File not found")
 
 
 def validate(data):
@@ -72,7 +79,18 @@ def validate(data):
     # TODO: Lap qua data, kiem tra tung record
     # Giu lai record hop le, dem record loi
 
-    print(f"Validation complete. Valid: {len(valid_records)}, Errors: {error_count}")
+    for record in data:
+        price = record.get("price", 0)
+        category = record.get("category", "")
+
+        # Validation: Price must be > 0 and category must not be empty or whitespace
+        if price <= 0 or not str(category).strip():
+            error_count += 1
+            continue
+
+        valid_records.append(record)
+
+    print(f"Validation summary: {len(valid_records)} valid, {error_count} dropped.")
     return valid_records
 
 
@@ -95,7 +113,11 @@ def transform(data):
         pd.DataFrame: DataFrame da duoc transform
     """
     # TODO: Tao DataFrame va ap dung transformations
-    pass
+    df = pd.DataFrame(data)
+    df["discounted_price"] = df["price"] * 0.9
+    df["category"] = df["category"].str.title()
+    df["processed_at"] = datetime.datetime.now().isoformat()
+    return df
 
 
 def load(df, output_path):
@@ -107,6 +129,7 @@ def load(df, output_path):
     """
     # TODO: Luu DataFrame ra CSV
     print(f"Data saved to {output_path}")
+    df.to_csv(output_path, index=False)
 
 
 # ============================================================
